@@ -1,4 +1,4 @@
-HiveMindShared = {}
+HiveMindGlobals = {}
 
 -- Shared Variables
 HiveMindGlobals.version = "0.0.1"
