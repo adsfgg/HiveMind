@@ -38,13 +38,13 @@ local function HTTPRequestCallback(response, request_error)
     end
 
     if status ~= 0 then
-        SendHiveMindChatMessage("Demo failed to upload.")
-        SendHiveMindChatMessage("Status: " .. status)
+        HiveMindGlobals:SendChatMessage("Demo failed to upload.")
+        HiveMindGlobals:SendChatMessage:SendChatMessage("Status: " .. status)
         SendHiveMindChatMessage("Reason: " .. reason)
     else
         -- notify the players that the demo was saved successfully.
-        SendHiveMindChatMessage("Demo recorded.")
-        SendHiveMindChatMessage("Round ID: " .. data['round_uuid'])
+        HiveMindGlobals:SendChatMessage("Demo recorded.")
+        HiveMindGlobals:SendChatMessage("Round ID: " .. data['round_uuid'])
     end
 end
 
