@@ -1,0 +1,6 @@
+modEntry = {
+    Client = "lua/HiveMind/ModEntry/client.lua",
+    Server = "lua/HiveMind/ModEntry/server.lua",
+    FileHooks = "lua/HiveMind/ModEntry/filehooks.lua",
+    Priority = 100,
+}
