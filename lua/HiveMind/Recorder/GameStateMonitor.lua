@@ -5,6 +5,7 @@
 class 'GameStateMonitor'
 
 local lastState
+local countdownStarted = false
 
 function GameStateMonitor:CheckGameState()
     local currentState = GetGamerules():GetGameState()
@@ -46,9 +47,14 @@ end
 
 function GameStateMonitor:OnCountdownStart()
     HiveMindRecorder:OnCountdownStart()
+    countdownStarted = true
 end
 
 function GameStateMonitor:OnGameStart()
+    if countdownStarted then
+        countdownStarted = false
+        HiveMindRecorder:OnCountdownEnd()
+    end
     HiveMindRecorder:OnGameStart()
 end
 
