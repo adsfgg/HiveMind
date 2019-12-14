@@ -39,7 +39,7 @@ local function HTTPRequestCallback(response, request_error)
 
     if status ~= 0 then
         HiveMindGlobals:SendChatMessage("Demo failed to upload.")
-        HiveMindGlobals:SendChatMessage:SendChatMessage("Status: " .. status)
+        HiveMindGlobals:SendChatMessage("Status: " .. status)
         SendHiveMindChatMessage("Reason: " .. reason)
     else
         -- notify the players that the demo was saved successfully.
