@@ -6,7 +6,7 @@ Script.Load("lua/HiveMind/Recorder/SaveSend.lua")
 class 'HiveMindRecorder'
 
 -- JSON Data Variables
-local headers = {}
+local header = {}
 local initial_data = {}
 local update_data = {}
 
@@ -21,16 +21,15 @@ function HiveMindRecorder:Initialize()
 end
 
 function HiveMindRecorder:OnCountdownStart()
-    HiveMindGlobals:SendChatMessage("Countdown start!")
     self:InitailiseHeaders()
 end
 
 function HiveMindRecorder:OnCountdownEnd()
-    HiveMindGlobals:SendChatMessage("Countdown end!")
+    --
 end
 
 function HiveMindRecorder:OnGameStart()
-    HiveMindGlobals:SendChatMessage("Game start!")
+    --
 end
 
 local function BuildModList()
@@ -67,6 +66,10 @@ function HiveMindRecorder:InitailiseHeaders()
     header['average_update_time'] = -1
 end
 
+function HiveMindRecorder:GetGametime()
+    return math.max( 0, math.floor(Shared.GetTime()) - GetGameInfoEntity():GetStartTime() )
+end
+
 function HiveMindRecorder:FinalizeHeaders()
     local winning_team = -1
     local currentState = GetGamerules():GetGameState()
@@ -85,11 +88,10 @@ function HiveMindRecorder:FinalizeHeaders()
 end
 
 function HiveMindRecorder:OnGameEnd()
-    HiveMindGlobals:SendChatMessage("Game end!")
     self:FinalizeHeaders();
 
     jsonStructure = {}
-    jsonStructure['headers'] = headers
+    jsonStructure['header'] = header
     jsonStructure['initial_data'] = initial_data
     jsonStructure['update_data'] = update_data
 
