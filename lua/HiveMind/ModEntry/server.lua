@@ -1,1 +1,1 @@
-if not Server then end
+if not Server then return end
