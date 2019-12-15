@@ -22,6 +22,7 @@ end
 
 function HiveMindRecorder:OnCountdownStart()
     self:InitailiseHeaders()
+    self:RecordInitialData()
 end
 
 function HiveMindRecorder:OnCountdownEnd()
@@ -30,6 +31,46 @@ end
 
 function HiveMindRecorder:OnGameStart()
     --
+end
+
+function HiveMindRecorder:OnGameEnd()
+    self:FinalizeHeaders();
+
+    jsonStructure = {}
+    jsonStructure['header'] = header
+    jsonStructure['initial_data'] = initial_data
+    jsonStructure['update_data'] = update_data
+
+    -- save the data locally then send it to the server.
+    SaveAndSendRoundData(jsonStructure)
+end 
+
+function HiveMindRecorder:RecordInitialData()
+    HiveMindGlobals:PrintDebug("Recording initial data")
+    initial_data = {}
+
+    for _, player in ientitylist(Shared.GetEntitiesWithClassname("PlayerInfoEntity")) do
+        local id = player:GetId()
+        local player = Shared.GetEntity(player.playerId)
+        HiveMindGlobals:PrintDebug("Recording initial data for player: " .. player:GetName() .. " (" .. id .. ")")
+
+        local origin = player:GetOrigin()
+
+        local position = {}
+        position["x"] = origin.x
+        position["y"] = origin.y
+        position["z"] = origin.z
+
+        local viewAngles = {}
+        local playerViewAngles = player:GetViewAngles()
+        viewAngles["pitch"] = playerViewAngles.pitch
+        viewAngles["yaw"] = playerViewAngles.yaw
+        viewAngles["roll"] = playerViewAngles.roll
+
+        initial_data[id] = {}
+        initial_data[id]["position"] = position
+        initial_data[id]["viewAngles"] = viewAngles
+    end
 end
 
 local function BuildModList()
@@ -86,18 +127,6 @@ function HiveMindRecorder:FinalizeHeaders()
     header['round_length'] = self:GetGametime()
     header['updates'] = updates
 end
-
-function HiveMindRecorder:OnGameEnd()
-    self:FinalizeHeaders();
-
-    jsonStructure = {}
-    jsonStructure['header'] = header
-    jsonStructure['initial_data'] = initial_data
-    jsonStructure['update_data'] = update_data
-
-    -- save the data locally then send it to the server.
-    SaveAndSendRoundData(jsonStructure)
-end 
 
 local function OnUpdateServer()
     if gameStateMonitor:CheckGameState() then
