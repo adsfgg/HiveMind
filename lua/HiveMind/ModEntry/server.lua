@@ -3,7 +3,7 @@ if not Server then return end
 Script.Load("lua/ConfigFileUtility.lua")
 
 local function start_playback(tags)
-    Shared.Message("Starting playback")
+    HiveMindGlobals:Print("Starting playback")
 
     local demo_id = ""
 
@@ -12,12 +12,12 @@ local function start_playback(tags)
         key,demo_id = tags[i]:match("(%a%a):(%a+)")
 
         if key and key == "hm" then
-            Shared.Message("Found HiveMind demo id: " .. demo_id)
+            HiveMindGlobals:Print("Found HiveMind demo id: " .. demo_id)
             break
         end
     end
 
-    Shared.Message("Initialising playback...")
+    HiveMindGlobals:Print("Initialising demo playback...")
 
     -- Skip this until it's actually implemented.
     --[[
@@ -30,6 +30,8 @@ local function start_playback(tags)
 end
 
 local function start_record()
+    HiveMindGlobals:Print("Initialising demo recorder")
+
     Script.Load("lua/HiveMind/Recorder/HiveMindRecorder.lua")
     
     local hmr = HiveMindRecorder()
