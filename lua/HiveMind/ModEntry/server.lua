@@ -2,16 +2,6 @@ if not Server then return end
 
 Script.Load("lua/ConfigFileUtility.lua")
 
-local function main()
-    local config = LoadConfigFile("ServerConfig.json", {}, true)
-
-    if Server.GetHasTag("hivemind") then
-        start_playback(config.tags)
-    else
-        start_record()
-    end
-end
-
 local function start_playback(tags)
     Shared.Message("Starting playback")
 
@@ -30,12 +20,13 @@ local function start_playback(tags)
     Shared.Message("Initialising playback...")
 
     -- Skip this until it's actually implemented.
-    return
+    --[[
     
     Script.Load("lua/HiveMind/Playback/HiveMindPlayback.lua")
 
     local hmp = HiveMindPlayback()
     hmp:Initialize()
+    ]]
 end
 
 local function start_record()
@@ -43,6 +34,16 @@ local function start_record()
     
     local hmr = HiveMindRecorder()
     hmr:Initialize()    
+end
+
+local function main()
+    local config = debug.getupvaluex(Server.GetHasTag, "config")
+
+    if Server.GetHasTag("hivemind") then
+        start_playback(config.tags)
+    else
+        start_record()
+    end
 end
 
 main()
