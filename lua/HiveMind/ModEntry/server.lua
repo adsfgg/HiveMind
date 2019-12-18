@@ -3,7 +3,7 @@ if not Server then return end
 Script.Load("lua/ConfigFileUtility.lua")
 
 local function start_playback(tags)
-    HiveMindGlobals:Print("Starting playback")
+    HiveMindGlobals:Print("Starting demo playback")
 
     local demo_id
 
@@ -44,8 +44,10 @@ local function main()
     local config = debug.getupvaluex(Server.GetHasTag, "config")
 
     if Server.GetHasTag("hivemind") then
+        HiveMindGlobals:Print("Starting in playback mode")
         start_playback(config.tags)
     else
+        HiveMindGlobals:Print("Starting in recording mode")
         start_record()
     end
 end
