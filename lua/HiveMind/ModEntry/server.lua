@@ -5,17 +5,19 @@ Script.Load("lua/ConfigFileUtility.lua")
 local function start_playback(tags)
     HiveMindGlobals:Print("Starting playback")
 
-    local demo_id = ""
+    local demo_id
 
-    for i = 0, #tags do
+    for i = 1, #tags do
         local key = ""
-        key,demo_id = tags[i]:match("(%a%a):(%a+)")
+        key,demo_id = string.match(tags[i], "(%a%a):(.+)")
 
         if key and key == "hm" then
             HiveMindGlobals:Print("Found HiveMind demo id: " .. demo_id)
             break
         end
     end
+
+    assert(demo_id ~= nil, "Failed to find demo_id")
 
     HiveMindGlobals:Print("Initialising demo playback...")
 
