@@ -59,8 +59,6 @@ function HiveMindRecorder:RecordInitialData()
     if next(trackerData) ~= nil then
         -- table.insert(update_data, trackerData)
         initial_data = trackerData
-    else
-        Shared.Message("trackerData is null!")
     end
 end
 
@@ -126,6 +124,8 @@ local function OnUpdateServer()
         if next(trackerData) ~= nil then
             --update_data[tostring(updates)] = trackerData
             table.insert(update_data, trackerData)
+        else
+            table.insert(update_data, {})
         end
     end
 end
