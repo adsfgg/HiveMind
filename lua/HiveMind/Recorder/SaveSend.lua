@@ -53,9 +53,9 @@ local function SendData(jsonData)
 end
 
 local function SaveData(jsonData, cJsonData, bJsonData)
-    local dataFile = io.open("config://RoundStats.json", "w+")
-    local cDataFile = io.open("config://RoundStatsCompressed.bin", "w+")
-    local bDataFile = io.open("config://RoundStatsB64.txt", "w+")
+    local dataFile = io.open("config://HiveMind/RoundStats.json", "w+")
+    local cDataFile = io.open("config://HiveMind/RoundStatsCompressed.bin", "w+")
+    local bDataFile = io.open("config://HiveMind/RoundStatsB64.txt", "w+")
 
     if dataFile then
         dataFile:write(jsonData)
