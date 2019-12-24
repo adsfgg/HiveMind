@@ -2,6 +2,7 @@ if not Server then return end
 
 Script.Load("lua/HiveMind/Recorder/GameStateMonitor.lua")
 Script.Load("lua/HiveMind/Recorder/SaveSend.lua")
+Script.Load("lua/HiveMind/Trackers/TrackerManager.lua")
 
 class 'HiveMindRecorder'
 
@@ -15,9 +16,13 @@ local updates = 0
 
 
 local gameStateMonitor = nil
+local trackerManager = nil
 
 function HiveMindRecorder:Initialize()
     gameStateMonitor = GameStateMonitor()
+
+    trackerManager = TrackerManager()
+    trackerManager:Initialize()
 end
 
 function HiveMindRecorder:OnCountdownStart()
@@ -49,27 +54,13 @@ function HiveMindRecorder:RecordInitialData()
     HiveMindGlobals:PrintDebug("Recording initial data")
     initial_data = {}
 
-    for _, player in ientitylist(Shared.GetEntitiesWithClassname("PlayerInfoEntity")) do
-        local id = player:GetId()
-        local player = Shared.GetEntity(player.playerId)
-        HiveMindGlobals:PrintDebug("Recording initial data for player: " .. player:GetName() .. " (" .. id .. ")")
+    local trackerData = trackerManager:UpdateAllTrackers(true)
 
-        local origin = player:GetOrigin()
-
-        local position = {}
-        position["x"] = origin.x
-        position["y"] = origin.y
-        position["z"] = origin.z
-
-        local viewAngles = {}
-        local playerViewAngles = player:GetViewAngles()
-        viewAngles["pitch"] = playerViewAngles.pitch
-        viewAngles["yaw"] = playerViewAngles.yaw
-        viewAngles["roll"] = playerViewAngles.roll
-
-        initial_data[id] = {}
-        initial_data[id]["position"] = position
-        initial_data[id]["viewAngles"] = viewAngles
+    if next(trackerData) ~= nil then
+        -- table.insert(update_data, trackerData)
+        initial_data = trackerData
+    else
+        Shared.Message("trackerData is null!")
     end
 end
 
@@ -130,7 +121,12 @@ end
 
 local function OnUpdateServer()
     if gameStateMonitor:CheckGameState() then
-        --
+        local trackerData = trackerManager:UpdateAllTrackers(false)
+
+        if next(trackerData) ~= nil then
+            --update_data[tostring(updates)] = trackerData
+            table.insert(update_data, trackerData)
+        end
     end
 end
 
