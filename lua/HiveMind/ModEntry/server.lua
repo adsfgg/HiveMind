@@ -18,15 +18,11 @@ local function start_playback(tags)
     assert(demo_id ~= nil, "Failed to find demo_id")
 
     HiveMindGlobals:Print("Initialising demo playback...")
-
-    -- Skip this until it's actually implemented.
-    --[[
     
     Script.Load("lua/HiveMind/Playback/HiveMindPlayback.lua")
 
     local hmp = HiveMindPlayback()
-    hmp:Initialize()
-    ]]
+    hmp:Initialize(demo_id)
 end
 
 local function start_record()
