@@ -40,3 +40,5 @@ end
 function HiveMindGlobals:GetDebugMode()
     return DEBUG
 end
+
+HiveMindGlobals:PrintDebug("Debug mode is enabled!")
