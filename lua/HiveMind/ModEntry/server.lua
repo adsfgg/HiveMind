@@ -7,9 +7,9 @@ local function start_playback(tags)
 
     for i = 1, #tags do
         local key = ""
-        key,demo_id = string.match(tags[i], "(%a%a):(.+)")
+        demo_id = string.match(tags[i], "hm:(.+)")
 
-        if key and key == "hm" then
+        if demo_id then
             HiveMindGlobals:Print("Found HiveMind demo id: " .. demo_id)
             break
         end
