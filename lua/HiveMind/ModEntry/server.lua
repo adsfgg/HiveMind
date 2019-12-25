@@ -1,7 +1,5 @@
 if not Server then return end
 
-Script.Load("lua/ConfigFileUtility.lua")
-
 local function start_playback(tags)
     HiveMindGlobals:Print("Starting demo playback")
 
