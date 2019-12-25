@@ -21,8 +21,7 @@ local function start_playback(tags)
     
     Script.Load("lua/HiveMind/Playback/HiveMindPlayback.lua")
 
-    local hmp = HiveMindPlayback()
-    hmp:Initialize(demo_id)
+    local hmp = HiveMindPlayback():Initialize(demo_id)
 end
 
 local function start_record()
@@ -30,8 +29,7 @@ local function start_record()
 
     Script.Load("lua/HiveMind/Recorder/HiveMindRecorder.lua")
     
-    local hmr = HiveMindRecorder()
-    hmr:Initialize()    
+    local hmr = HiveMindRecorder():Initialize()    
 end
 
 local function main()

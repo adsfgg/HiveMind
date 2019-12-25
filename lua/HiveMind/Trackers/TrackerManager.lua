@@ -11,6 +11,8 @@ TrackerManager.trackers = {}
 function TrackerManager:Initialize()
     self.trackers = {}
     table.insert(self.trackers, PlayerTracker())
+
+    return self
 end
 
 function TrackerManager:UpdateAllTrackers(keyframe)

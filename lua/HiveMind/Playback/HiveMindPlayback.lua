@@ -21,6 +21,8 @@ function HiveMindPlayback:Initialize(demo_id)
 
     self:LoadData(demo_id)
     HiveMindGlobals:PrintDebug("Waiting to play demo")
+
+    return self
 end
 
 function HiveMindPlayback:LoadData(demo_id)

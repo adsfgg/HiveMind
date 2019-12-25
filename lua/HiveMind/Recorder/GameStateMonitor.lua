@@ -12,6 +12,8 @@ function GameStateMonitor:Initialize(recorder)
     assert(recorder ~= nil)
 
     self.recorder = recorder
+
+    return self
 end
 
 function GameStateMonitor:CheckGameState()

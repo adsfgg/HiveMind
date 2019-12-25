@@ -21,13 +21,12 @@ HiveMindRecorder.gameStateMonitor = nil
 HiveMindRecorder.trackerManager = nil
 
 function HiveMindRecorder:Initialize()
-    self.gameStateMonitor = GameStateMonitor()
-    self.gameStateMonitor:Initialize(self)
-
-    self.trackerManager = TrackerManager()
-    self.trackerManager:Initialize()
+    self.gameStateMonitor = GameStateMonitor():Initialize(self)
+    self.trackerManager = TrackerManager():Initialize()
 
     currentHiveMindRecorder = self
+
+    return self
 end
 
 function HiveMindRecorder:OnCountdownStart()
