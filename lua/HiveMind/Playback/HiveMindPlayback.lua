@@ -6,12 +6,15 @@ Script.Load("lua/HiveMind/Trackers/TrackerManager.lua")
 Script.Load("lua/HiveMind/LibDeflate.lua")
 Script.Load("lua/HiveMind/base64.lua")
 
+local currentHiveMindPlayback = nil
+
 class 'HiveMindPlayback'
 
 HiveMindPlayback.trackerManager = nil
 
 HiveMindPlayback.LibDeflate = GetLibDeflate()
 HiveMindPlayback.B64 = GetBase64()
+HiveMindPlayback.data = {}
 
 function HiveMindPlayback:Initialize(demo_id)
     assert(demo_id ~= nil, "No demo id given")
@@ -19,8 +22,10 @@ function HiveMindPlayback:Initialize(demo_id)
     self.trackerManager = TrackerManager()
     self.trackerManager:Initialize()
 
-    self:LoadData(demo_id)
+    self.data = self:LoadData(demo_id)
     HiveMindGlobals:PrintDebug("Waiting to play demo")
+
+    currentHiveMindPlayback = self
 
     return self
 end
@@ -38,4 +43,16 @@ function HiveMindPlayback:LoadData(demo_id)
 
     assert(data ~= nil, "Failed to load demo")
     HiveMindGlobals:PrintDebug("Demo data loaded successfully")
+    return data
 end
+
+function OnClientConnect(client)
+    HiveMindGlobals:PrintDebug("client connected")
+end
+
+function OnClientDisconnect(client)
+    HiveMindGlobals:PrintDebug("client disconnected")
+end
+
+Event.Hook("ClientConnect", OnClientConnect)
+Event.Hook("ClientDisconnect", OnClientDisconnect)
