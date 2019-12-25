@@ -1,7 +1,7 @@
 if not Server then return end
 
 local function start_playback(tags)
-    HiveMindGlobals:Print("Starting demo playback")
+    HiveMindGlobals:PrintDebug("Starting demo playback")
 
     local demo_id
 
@@ -10,14 +10,14 @@ local function start_playback(tags)
         demo_id = string.match(tags[i], "hm:(.+)")
 
         if demo_id then
-            HiveMindGlobals:Print("Found HiveMind demo id: " .. demo_id)
+            HiveMindGlobals:PrintDebug("Found HiveMind demo id: " .. demo_id)
             break
         end
     end
 
     assert(demo_id ~= nil, "Failed to find demo_id")
 
-    HiveMindGlobals:Print("Initialising demo playback...")
+    HiveMindGlobals:PrintDebug("Initialising demo playback...")
     
     Script.Load("lua/HiveMind/Playback/HiveMindPlayback.lua")
 
@@ -25,7 +25,7 @@ local function start_playback(tags)
 end
 
 local function start_record()
-    HiveMindGlobals:Print("Initialising demo recorder")
+    HiveMindGlobals:PrintDebug("Initialising demo recorder")
 
     Script.Load("lua/HiveMind/Recorder/HiveMindRecorder.lua")
     
@@ -37,9 +37,11 @@ local function main()
 
     if Server.GetHasTag("hivemind") then
         HiveMindGlobals:Print("Starting in playback mode")
+        HiveMindGlobals:SetType("Playback")
         start_playback(config.tags)
     else
         HiveMindGlobals:Print("Starting in recording mode")
+        HiveMindGlobals:SetType("Recording")
         start_record()
     end
 end

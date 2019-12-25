@@ -1,5 +1,7 @@
 --[[
     Class to monitor the GameState.
+
+    TODO: This is pretty useless, just use GameInfo
 ]]
 
 class 'GameStateMonitor'

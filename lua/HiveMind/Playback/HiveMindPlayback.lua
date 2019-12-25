@@ -23,11 +23,28 @@ function HiveMindPlayback:Initialize(demo_id)
     self.trackerManager:Initialize()
 
     self.data = self:LoadData(demo_id)
-    HiveMindGlobals:PrintDebug("Waiting to play demo")
+
+    Event.Hook("ClientConnect", function(client) self:OnClientConnect(client) end)
+
+    HiveMindGlobals:PrintDebug("Waiting for client to connect...")
 
     currentHiveMindPlayback = self
-
     return self
+end
+
+function HiveMindPlayback:OnClientConnect(client)
+    local player = client:GetControllingPlayer()
+
+    assert(player)
+
+    -- Force the connecting local player to spectate
+    HiveMindGlobals:PrintDebug("Client connecting...")
+    if client:GetIsLocalClient() then
+        HiveMindGlobals:PrintDebug("Client is local, moving to spectate")
+        GetGamerules():JoinTeam(player, kSpectatorIndex)
+    else
+        HiveMindGlobals:PrintDebug("Client is not local, ignoring")
+    end
 end
 
 function HiveMindPlayback:LoadData(demo_id)
@@ -45,14 +62,3 @@ function HiveMindPlayback:LoadData(demo_id)
     HiveMindGlobals:PrintDebug("Demo data loaded successfully")
     return data
 end
-
-function OnClientConnect(client)
-    HiveMindGlobals:PrintDebug("client connected")
-end
-
-function OnClientDisconnect(client)
-    HiveMindGlobals:PrintDebug("client disconnected")
-end
-
-Event.Hook("ClientConnect", OnClientConnect)
-Event.Hook("ClientDisconnect", OnClientDisconnect)

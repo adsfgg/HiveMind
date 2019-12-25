@@ -5,6 +5,7 @@ HiveMindGlobals = {}
 -- Shared Variables
 HiveMindGlobals.version = "0.0.1"
 HiveMindGlobals.modName = "HiveMind"
+HiveMindGlobals.type = "Main"
 
 -- Shared Functions
 function HiveMindGlobals:SendChatMessage(msg, team, teamType)
@@ -27,7 +28,7 @@ function HiveMindGlobals:Print(msg)
     assert(msg ~= null, "Message cannot be null")
     assert(type(msg) == "string", "Message must be of type string")
 
-    Shared.Message(self.modName .. " - " .. msg)
+    Shared.Message(self.modName .. " - (" .. self:GetType() .. "): " .. msg)
 end
 
 function HiveMindGlobals:PrintDebug(msg)
@@ -35,6 +36,14 @@ function HiveMindGlobals:PrintDebug(msg)
         msg = "DEBUG - " .. msg
         self:Print(msg)
     end
+end
+
+function HiveMindGlobals:SetType(type)
+    self.type = type
+end
+
+function HiveMindGlobals:GetType()
+    return self.type
 end
 
 function HiveMindGlobals:GetDebugMode()
