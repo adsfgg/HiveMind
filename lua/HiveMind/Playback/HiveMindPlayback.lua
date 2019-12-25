@@ -8,16 +8,16 @@ Script.Load("lua/HiveMind/base64.lua")
 
 class 'HiveMindPlayback'
 
-local trackerManager = nil
+HiveMindPlayback.trackerManager = nil
 
-local LibDeflate = GetLibDeflate()
-local B64 = GetBase64()
+HiveMindPlayback.LibDeflate = GetLibDeflate()
+HiveMindPlayback.B64 = GetBase64()
 
 function HiveMindPlayback:Initialize(demo_id)
     assert(demo_id ~= nil, "No demo id given")
 
-    trackerManager = TrackerManager()
-    trackerManager:Initialize()
+    self.trackerManager = TrackerManager()
+    self.trackerManager:Initialize()
 
     self:LoadData(demo_id)
     HiveMindGlobals:PrintDebug("Waiting to play demo")
@@ -30,8 +30,8 @@ function HiveMindPlayback:LoadData(demo_id)
     HiveMindGlobals:PrintDebug("Attempting to decode data")
 
     local data = dataFile:read()
-    data = B64.decode(data)
-    data = LibDeflate:DecompressZlib(data)
+    data = self.B64.decode(data)
+    data = self.LibDeflate:DecompressZlib(data)
     data = json.decode(data)
 
     assert(data ~= nil, "Failed to load demo")
