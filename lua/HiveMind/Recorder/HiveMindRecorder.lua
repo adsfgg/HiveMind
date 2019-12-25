@@ -4,25 +4,30 @@ Script.Load("lua/HiveMind/Recorder/GameStateMonitor.lua")
 Script.Load("lua/HiveMind/Recorder/SaveSend.lua")
 Script.Load("lua/HiveMind/Trackers/TrackerManager.lua")
 
+local currentHiveMindRecorder = nil
+
 class 'HiveMindRecorder'
 
 -- JSON Data Variables
-local header = {}
-local initial_data = {}
-local update_data = {}
+HiveMindRecorder.header = {}
+HiveMindRecorder.initial_data = {}
+HiveMindRecorder.update_data = {}
 
 -- Update Variables
-local updates = 0
+HiveMindRecorder.updates = 0
 
 
-local gameStateMonitor = nil
-local trackerManager = nil
+HiveMindRecorder.gameStateMonitor = nil
+HiveMindRecorder.trackerManager = nil
 
 function HiveMindRecorder:Initialize()
-    gameStateMonitor = GameStateMonitor()
+    self.gameStateMonitor = GameStateMonitor()
+    self.gameStateMonitor:Initialize(self)
 
-    trackerManager = TrackerManager()
-    trackerManager:Initialize()
+    self.trackerManager = TrackerManager()
+    self.trackerManager:Initialize()
+
+    currentHiveMindRecorder = self
 end
 
 function HiveMindRecorder:OnCountdownStart()
@@ -52,13 +57,13 @@ end
 
 function HiveMindRecorder:RecordInitialData()
     HiveMindGlobals:PrintDebug("Recording initial data")
-    initial_data = {}
+    self.initial_data = {}
 
-    local trackerData = trackerManager:UpdateAllTrackers(true)
+    local trackerData = self.trackerManager:UpdateAllTrackers(true)
 
     if next(trackerData) ~= nil then
         -- table.insert(update_data, trackerData)
-        initial_data = trackerData
+        self.initial_data = trackerData
     end
 end
 
@@ -86,14 +91,14 @@ local function BuildServerInfo()
 end
 
 function HiveMindRecorder:InitailiseHeaders()
-    header = {}
-    header['ns2_build_number'] = Shared.GetBuildNumber()
-    header['map'] = Shared.GetMapName()
-    header['server_info'] = BuildServerInfo()
-    header['hivemind_version'] = HiveMindGlobals.version
+    self.header = {}
+    self.header['ns2_build_number'] = Shared.GetBuildNumber()
+    self.header['map'] = Shared.GetMapName()
+    self.header['server_info'] = BuildServerInfo()
+    self.header['hivemind_version'] = HiveMindGlobals.version
 
     -- init these but we need to set their values later in OnGameEnd. We can use these values to check if the data is complete.
-    header['average_update_time'] = -1
+    self.header['average_update_time'] = -1
 end
 
 function HiveMindRecorder:GetGametime()
@@ -112,22 +117,22 @@ function HiveMindRecorder:FinalizeHeaders()
         winning_team = 0
     end
 
-    header['winning_team'] = winning_team
-    header['round_length'] = self:GetGametime()
-    header['updates'] = updates
+    self.header['winning_team'] = winning_team
+    self.header['round_length'] = self:GetGametime()
+    self.header['updates'] = self.updates
 end
 
-local function OnUpdateServer()
-    if gameStateMonitor:CheckGameState() then
-        local trackerData = trackerManager:UpdateAllTrackers(false)
+function HiveMindRecorder:OnUpdateServer()
+    if self.gameStateMonitor:CheckGameState() then
+        local trackerData = self.trackerManager:UpdateAllTrackers(false)
 
         if next(trackerData) ~= nil then
             --update_data[tostring(updates)] = trackerData
-            table.insert(update_data, trackerData)
+            table.insert(self.update_data, trackerData)
         else
-            table.insert(update_data, {})
+            table.insert(self.update_data, {})
         end
     end
 end
 
-Event.Hook("UpdateServer", OnUpdateServer)
+Event.Hook("UpdateServer", function() currentHiveMindRecorder:OnUpdateServer() end)

@@ -4,29 +4,36 @@
 
 class 'GameStateMonitor'
 
-local lastState
-local countdownStarted = false
+GameStateMonitor.lastState = nil
+GameStateMonitor.countdownStarted = false
+GameStateMonitor.recorder = nil
+
+function GameStateMonitor:Initialize(recorder)
+    assert(recorder ~= nil)
+
+    self.recorder = recorder
+end
 
 function GameStateMonitor:CheckGameState()
     local currentState = GetGamerules():GetGameState()
-    if not lastState then
-        lastState = currentState
+    if not self.lastState then
+        self.lastState = currentState
         return false
     end
 
-    if lastState ~= kGameState.Started then
+    if self.lastState ~= kGameState.Started then
         self:CheckForGameStart(currentState)
     end
 
     self:CheckForGameEnd(currentState)
 
-    lastState = currentState
+    self.lastState = currentState
 
     return currentState == kGameState.Started
 end
 
 function GameStateMonitor:CheckForGameStart(currentState)
-    if lastState ~= currentState then
+    if self.lastState ~= currentState then
         if currentState == kGameState.Countdown then
             self:OnCountdownStart()
         elseif currentState == kGameState.Started then
@@ -36,7 +43,7 @@ function GameStateMonitor:CheckForGameStart(currentState)
 end
 
 function GameStateMonitor:CheckForGameEnd(currentState)
-    if lastState ~= currentState then
+    if self.lastState ~= currentState then
         if currentState == kGameState.Team1Won or currentState == kGameState.Team2Won or currentState == kGameState.Draw then
             self:OnGameEnd()
             return true
@@ -46,18 +53,18 @@ function GameStateMonitor:CheckForGameEnd(currentState)
 end
 
 function GameStateMonitor:OnCountdownStart()
-    HiveMindRecorder:OnCountdownStart()
-    countdownStarted = true
+    self.recorder:OnCountdownStart()
+    self.countdownStarted = true
 end
 
 function GameStateMonitor:OnGameStart()
-    if countdownStarted then
-        countdownStarted = false
-        HiveMindRecorder:OnCountdownEnd()
+    if self.countdownStarted then
+        self.countdownStarted = false
+        self.recorder:OnCountdownEnd()
     end
-    HiveMindRecorder:OnGameStart()
+    self.recorder:OnGameStart()
 end
 
 function GameStateMonitor:OnGameEnd()
-    HiveMindRecorder:OnGameEnd()
+    self.recorder:OnGameEnd()
 end
