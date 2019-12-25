@@ -36,3 +36,7 @@ function HiveMindGlobals:PrintDebug(msg)
         self:Print(msg)
     end
 end
+
+function HiveMindGlobals:GetDebugMode()
+    return DEBUG
+end

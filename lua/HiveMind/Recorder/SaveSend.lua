@@ -52,8 +52,8 @@ local function SendData(jsonData)
     Shared.SendHTTPRequest( HiveMindStatsURL, "POST", { data = jsonData }, HTTPRequestCallback)
 end
 
-local function SaveData(jsonData, cJsonData, bJsonData)
-    local dataFile = io.open("config://HiveMind/RoundStats.json", "w+")
+local function SaveDataDebug(jsonData, cJsonData, bJsonData)    
+    local dataFile = io.open("config://HiveMind/uuid-tba.json", "w+")
     local cDataFile = io.open("config://HiveMind/RoundStatsCompressed.bin", "w+")
     local bDataFile = io.open("config://HiveMind/RoundStatsB64.txt", "w+")
 
@@ -73,14 +73,27 @@ local function SaveData(jsonData, cJsonData, bJsonData)
     end
 end
 
-function SaveAndSendRoundData(jsonStructure)
-    -- for debug
-    local jsonData = json.encode(jsonStructure, { indent=true })
-    local cJsonData = LibDeflate:CompressZlib(json.encode(jsonStructure, { index = false }))
+local function SaveData(data)
+    local dataFile = assert(io.open("config://HiveMind/uuid-tba.demo", "w+"))
 
+    dataFile:write(data)
+
+    io.close(dataFile)
+end
+
+function SaveAndSendRoundData(jsonStructure)
+    local jsonData = json.encode(jsonStructure, { indent=false })
+    local cJsonData = LibDeflate:CompressZlib(jsonData)
     local bJsonData = B64.encode(cJsonData)
 
-    SaveData(jsonData, cJsonData, bJsonData)
+    if HiveMindGlobals:GetDebugMode() then
+        local jsonData = json.encode(jsonStructure, { indent=true })
+
+        SaveDataDebug(jsonData, cJsonData, bJsonData)
+    else
+        SaveData(bJsonData)
+    end
+    
     -- Disable upload for now.
     -- SendData(bJsonData)
 end
