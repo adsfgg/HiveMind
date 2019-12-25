@@ -21,8 +21,8 @@ HiveMindRecorder.gameStateMonitor = nil
 HiveMindRecorder.trackerManager = nil
 
 function HiveMindRecorder:Initialize()
-    self.gameStateMonitor = GameStateMonitor():Initialize(self)
     self.trackerManager = TrackerManager():Initialize()
+    self.gameStateMonitor = GameStateMonitor():Initialize(self)
 
     currentHiveMindRecorder = self
 
@@ -46,9 +46,9 @@ function HiveMindRecorder:OnGameEnd()
     self:FinalizeHeaders();
 
     jsonStructure = {}
-    jsonStructure['header'] = header
-    jsonStructure['initial_data'] = initial_data
-    jsonStructure['update_data'] = update_data
+    jsonStructure['header'] = self.header
+    jsonStructure['initial_data'] = self.initial_data
+    jsonStructure['update_data'] = self.update_data
 
     -- save the data locally then send it to the server.
     SaveAndSendRoundData(jsonStructure)
@@ -61,7 +61,6 @@ function HiveMindRecorder:RecordInitialData()
     local trackerData = self.trackerManager:UpdateAllTrackers(true)
 
     if next(trackerData) ~= nil then
-        -- table.insert(update_data, trackerData)
         self.initial_data = trackerData
     end
 end
