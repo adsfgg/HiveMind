@@ -15,11 +15,13 @@ Script.Load("lua/HiveMind/Trackers/Tracker.lua")
 
 class 'PlayerTracker' (Tracker)
 
+PlayerTracker.entityIdMap = {}
+
 function PlayerTracker:GetName()
     return "player"
 end
 
-function PlayerTracker:OnUpdate()
+function PlayerTracker:OnUpdate_Record()
     -- iterate through all players
     for _, player in ientitylist(Shared.GetEntitiesWithClassname("PlayerInfoEntity")) do
         local id = player:GetId()
@@ -64,4 +66,8 @@ function PlayerTracker:OnUpdate()
     end
 
     return Tracker.OnUpdate(self)
+end
+
+function PlayerTracker:OnUpdate_Playback()
+    print("Player update?")
 end

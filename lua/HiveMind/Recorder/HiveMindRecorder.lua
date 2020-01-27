@@ -122,7 +122,7 @@ end
 
 function HiveMindRecorder:OnUpdateServer()
     if self.gameStateMonitor:CheckGameState() then
-        local trackerData = self.trackerManager:UpdateAllTrackers(false)
+        local trackerData = self.trackerManager:UpdateAllTrackers_Record(false)
 
         if next(trackerData) ~= nil then
             --update_data[tostring(updates)] = trackerData

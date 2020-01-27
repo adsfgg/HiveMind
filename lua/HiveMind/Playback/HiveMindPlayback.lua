@@ -6,8 +6,6 @@ Script.Load("lua/HiveMind/Trackers/TrackerManager.lua")
 Script.Load("lua/HiveMind/LibDeflate.lua")
 Script.Load("lua/HiveMind/base64.lua")
 
-local currentHiveMindPlayback = nil
-
 class 'HiveMindPlayback'
 
 HiveMindPlayback.trackerManager = nil
@@ -15,6 +13,8 @@ HiveMindPlayback.trackerManager = nil
 HiveMindPlayback.LibDeflate = GetLibDeflate()
 HiveMindPlayback.B64 = GetBase64()
 HiveMindPlayback.data = {}
+HiveMindPlayback.playbackStarted = false
+HiveMindPlayback.currentUpdate = 0
 
 function HiveMindPlayback:Initialize(demo_id)
     assert(demo_id ~= nil, "No demo id given")
@@ -25,10 +25,10 @@ function HiveMindPlayback:Initialize(demo_id)
     self.data = self:LoadData(demo_id)
 
     Event.Hook("ClientConnect", function(client) self:OnClientConnect(client) end)
+    Event.Hook("UpdateServer", function(server) self:OnUpdateServer(server) end)
 
     HiveMindGlobals:PrintDebug("Waiting for client to connect...")
 
-    currentHiveMindPlayback = self
     return self
 end
 
@@ -42,6 +42,8 @@ function HiveMindPlayback:OnClientConnect(client)
     if client:GetIsLocalClient() then
         HiveMindGlobals:PrintDebug("Client is local, moving to spectate")
         GetGamerules():JoinTeam(player, kSpectatorIndex)
+        HiveMindGlobals:SendChatMessage("Starting demo")
+        self.playbackStarted = true
     else
         HiveMindGlobals:PrintDebug("Client is not local, ignoring")
     end
@@ -61,4 +63,13 @@ function HiveMindPlayback:LoadData(demo_id)
     assert(data ~= nil, "Failed to load demo")
     HiveMindGlobals:PrintDebug("Demo data loaded successfully")
     return data
+end
+
+function HiveMindPlayback:OnUpdateServer(server)
+    if not self.playbackStarted then return end
+
+    -- TODO This doesn't work pls fix
+    self.trackerManager:UpdateAllTrackers_Playback(self.data["update_data"][self.currentUpdate])
+
+    self.currentUpdate = self.currentUpdate + 1
 end

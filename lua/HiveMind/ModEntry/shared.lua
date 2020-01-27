@@ -6,6 +6,7 @@ HiveMindGlobals = {}
 HiveMindGlobals.version = "0.0.1"
 HiveMindGlobals.modName = "HiveMind"
 HiveMindGlobals.type = "Main"
+HiveMindGlobals.callbacks = {}
 
 -- Shared Functions
 function HiveMindGlobals:SendChatMessage(msg, team, teamType)

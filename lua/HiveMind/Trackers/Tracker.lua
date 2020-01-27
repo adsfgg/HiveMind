@@ -31,7 +31,7 @@ function Tracker:SetKeyframe(keyFrame)
 end
 
 -- Here we gather info for the tracker
-function Tracker:OnUpdate()
+function Tracker:OnUpdate_Record()
     if next(self.changes) == nil then
         return nil
     end
@@ -44,6 +44,10 @@ function Tracker:OnUpdate()
     self.keyFrame = false
 
     return changes
+end
+
+function Tracker:OnUpdate_Playback()
+    assert(false)
 end
 
 function Tracker:OnReset()
