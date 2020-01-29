@@ -68,6 +68,68 @@ function PlayerTracker:OnUpdate_Record()
     return Tracker.OnUpdate(self)
 end
 
-function PlayerTracker:OnUpdate_Playback()
-    print("Player update?")
+function PlayerTracker:OnUpdate_Playback(update_data)
+    for id,player_data in pairs(update_data) do
+        local player = self.entityIdMap[id]
+
+        if not player then
+            HiveMindGlobals:PrintDebug("Adding client")
+            player = Server.AddVirtualClient():GetControllingPlayer()
+        end
+
+        local team = player_data['team']
+        local playerName = player_data['player_name']
+        local pres = player_data['pres']
+        local health = player_data['health']
+        local armour = player_data['armour']
+        local alive = player_data['alive']
+        local commander = player_data['commander']
+        local current_weapon = player_data['current_weapon']
+        local spectator = player_data['spectator']
+        
+        local origin = player:GetOrigin()
+        local origin_x = player_data['origin_x'] or origin.x
+        local origin_y = player_data['origin_y'] or origin.y
+        local origin_z = player_data['origin_z'] or origin.z
+        local origin = Vector(origin_x, origin_y, origin_z)
+
+        if team ~= nil and player then
+            _,player = GetGamerules():JoinTeam(player, team)
+        end
+
+        if playerName ~= nil and player then
+            player:SetName(playerName)
+        end
+
+        if pres ~= nil and player then
+            player:SetResources(pres)
+        end 
+
+        if health ~= nil and player then
+            player:SetHealth(health)
+
+            if health == 0 then
+                player = nil
+            end
+        end
+
+        if armour ~= nil and player then
+            player:SetArmor(armour)
+        end
+
+        if commander ~= nil and player then
+            --
+        end
+
+        if origin ~= nil and player then
+            player:SetOrigin(origin)
+        end
+
+        if alive ~= nil and not alive and player then
+            player:Kill()
+            player = nil
+        end
+
+        self.entityIdMap[id] = player
+    end
 end

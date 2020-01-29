@@ -13,8 +13,11 @@ HiveMindPlayback.trackerManager = nil
 HiveMindPlayback.LibDeflate = GetLibDeflate()
 HiveMindPlayback.B64 = GetBase64()
 HiveMindPlayback.data = {}
+
 HiveMindPlayback.playbackStarted = false
-HiveMindPlayback.currentUpdate = 0
+HiveMindPlayback.timeToStart = 0
+
+HiveMindPlayback.currentUpdate = 1
 
 function HiveMindPlayback:Initialize(demo_id)
     assert(demo_id ~= nil, "No demo id given")
@@ -42,8 +45,9 @@ function HiveMindPlayback:OnClientConnect(client)
     if client:GetIsLocalClient() then
         HiveMindGlobals:PrintDebug("Client is local, moving to spectate")
         GetGamerules():JoinTeam(player, kSpectatorIndex)
-        HiveMindGlobals:SendChatMessage("Starting demo")
-        self.playbackStarted = true
+        HiveMindGlobals:SendChatMessage("Starting demo in 10 seconds")
+
+        self.timeToStart = Shared.GetTime() + 10
     else
         HiveMindGlobals:PrintDebug("Client is not local, ignoring")
     end
@@ -66,9 +70,20 @@ function HiveMindPlayback:LoadData(demo_id)
 end
 
 function HiveMindPlayback:OnUpdateServer(server)
-    if not self.playbackStarted then return end
+    if not self.playbackStarted then 
+        if self.timeToStart == 0 or Shared.GetTime() < self.timeToStart then
+            return
+        end
 
-    -- TODO This doesn't work pls fix
+        HiveMindGlobals:SendChatMessage("Starting demo")
+
+        self.playbackStarted = true
+
+        HiveMindGlobals:PrintDebug("Loading initial data")
+        self.trackerManager:UpdateAllTrackers_Playback(self.data["initial_data"])
+        return
+    end
+
     self.trackerManager:UpdateAllTrackers_Playback(self.data["update_data"][self.currentUpdate])
 
     self.currentUpdate = self.currentUpdate + 1
