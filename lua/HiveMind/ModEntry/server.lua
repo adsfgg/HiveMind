@@ -28,8 +28,6 @@ local function start_record()
     HiveMindGlobals:PrintDebug("Initialising demo recorder")
 
     Script.Load("lua/HiveMind/Recorder/HiveMindRecorder.lua")
-    
-    local hmr = HiveMindRecorder():Initialize()    
 end
 
 local function main()

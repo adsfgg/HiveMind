@@ -52,15 +52,16 @@ local function SendData(jsonData)
     Shared.SendHTTPRequest( HiveMindStatsURL, "POST", { data = jsonData }, HTTPRequestCallback)
 end
 
+local function SaveData(data)
+    local dataFile = assert(io.open("config://HiveMind/uuid-tba.demo", "w+"))
+
+    dataFile:write(data)
+
+    io.close(dataFile)
+end
+
 local function SaveDataDebug(jsonData, cJsonData, bJsonData)
-    local bDataFile = io.open("config://HiveMind/uuid-tba.demo", "w+")
-
-    if bDataFile then
-        bDataFile:write(bJsonData)
-        io.close(bDataFile)
-    end
-
-    if not DEBUG then return end
+    SaveData(bJsonData)
 
     local dataFile = io.open("config://HiveMind/uuid-tba.json", "w+")
     local cDataFile = io.open("config://HiveMind/uuid-tba.bin", "w+")
@@ -75,14 +76,6 @@ local function SaveDataDebug(jsonData, cJsonData, bJsonData)
         io.close(cDataFile)
     end
 
-end
-
-local function SaveData(data)
-    local dataFile = assert(io.open("config://HiveMind/uuid-tba.demo", "w+"))
-
-    dataFile:write(data)
-
-    io.close(dataFile)
 end
 
 function SaveAndSendRoundData(jsonStructure)
