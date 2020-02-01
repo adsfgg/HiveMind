@@ -4,16 +4,22 @@ Script.Load("lua/HiveMind/Recorder/SaveSend.lua")
 
 class 'HiveMindRecorder'
 
+-- Player Data
 HiveMindRecorder.playerData = nil
 HiveMindRecorder.playerDataIdx = nil
+HiveMindRecorder.fullPlayerData = nil
+
+-- Header Data
+HiveMindRecorder.headerData = nil
 
 HiveMindRecorder.recording = nil
+HiveMindRecorder.totalUpdates = 0
 
 function HiveMindRecorder:Initialise()
+    HiveMindGlobals:PrintDebug("Initialise HiveMindRecorder")
+
     -- init vars
-    self.playerData = {}
-    self.playerDataIdx = 0
-    self.recording = false
+    self:InitRecordingData()
 
     -- setup event hooks
     Event.Hook("UpdateServer", function(server) self:OnUpdateServer(server) end )
@@ -23,24 +29,82 @@ end
 function HiveMindRecorder:ProcessMove(player, input)
     if not self.recording then return end
 
-    local p_id = player:GetId()
-    local player_update = {}
+    local playerId = "S" .. player:GetSteamId()
+    if playerId == 0 then
+        if not player:GetIsVirtual() then
+            HiveMindGlobals:PrintWarn("Failed to get steamid for non virtual player, falling back to entity-id")
+        end
 
-    player_update.commands = input.commands
-    player_update.origin = player:GetOrigin()
-    player_update.yaw = input.yaw
-    player_update.pitch = input.pitch
-    player_update.velocity = player:GetVelocity()
+        playerId = "E" .. player:GetId()
+    end
 
-    self:UpdatePlayerData(p_id, player_update)
+    local playerUpdate = {}
+    local origin = player:GetOrigin()
+    local velocity = player:GetVelocity()
+
+    playerUpdate.commands   = input.commands
+    playerUpdate.origin_x   = origin.x
+    playerUpdate.origin_y   = origin.y
+    playerUpdate.origin_z   = origin.z
+    playerUpdate.yaw        = input.yaw
+    playerUpdate.pitch      = input.pitch
+    playerUpdate.velocity_x = velocity.x
+    playerUpdate.velocity_y = velocity.y
+    playerUpdate.velocity_z = velocity.z
+
+    self:UpdatePlayerData(playerId, playerUpdate)
 end
 
-function HiveMindRecorder:UpdatePlayerData(p_id, player_update)
+function HiveMindRecorder:UpdatePlayerData(playerId, playerUpdate)
     if not self.playerData[self.playerDataIdx] then
         self.playerData[self.playerDataIdx] = {}
     end
 
-    self.playerData[self.playerDataIdx][p_id] = player_update
+    if self.fullPlayerData[playerId] then
+        playerUpdate = self:GetPlayerDataChanges(self.fullPlayerData[playerId], playerUpdate)
+        self:ApplyPlayerDataChanges(playerUpdate, playerId)
+    else
+        self.fullPlayerData[playerId] = playerUpdate
+    end
+
+    self.playerData[self.playerDataIdx][playerId] = playerUpdate
+end
+
+function HiveMindRecorder:GetPlayerDataChanges(fullData, playerUpdate)
+    local changes = {}
+
+    for i,v in pairs(playerUpdate) do
+        if fullData[i] ~= v then
+            changes[i] = v
+        end
+    end
+
+    return changes
+end
+
+function HiveMindRecorder:ApplyPlayerDataChanges(playerChanges, playerId)
+    for i,v in pairs(playerChanges) do
+        self.fullPlayerData[playerId][i] = v
+    end
+end
+
+function HiveMindRecorder:InitRecordingData()
+    HiveMindGlobals:PrintDebug("Initialising data for recording")
+    self.playerData     = {}
+    self.playerDataIdx  = 0
+    self.fullPlayerData = {}
+    self.headerData     = {}
+    self.recording      = false
+    self.totalUpdates   = 0
+end
+
+function HiveMindRecorder:PopulateHeaderData()
+    HiveMindGlobals:PrintDebug("Populating header data")
+    local headerData = {}
+
+    headerData['totalUpdates'] = self.totalUpdates
+
+    self.headerData = headerData
 end
 
 function HiveMindRecorder:OnUpdateServer(server)
@@ -48,28 +112,39 @@ function HiveMindRecorder:OnUpdateServer(server)
 
     if self.recording then
         if gameInfo:GetGameEnded() then
+            HiveMindGlobals:PrintDebug("Game ended, writing buffers")
+            self:PopulateHeaderData()
             self:Write()
             self.recording = false
         else
-            self.playerDataIdx = self.playerDataIdx + 1
+            self.totalUpdates   = self.totalUpdates + 1
+            self.playerDataIdx  = self.playerDataIdx + 1
         end
-    elseif (gameInfo:GetCountdownActive() or gameInfo:GetGameStarted()) and not Shared.GetCheatsEnabled() then
+    elseif (gameInfo:GetCountdownActive() or gameInfo:GetGameStarted()) and (not Shared.GetCheatsEnabled() or HiveMindGlobals:GetDebugMode()) then
+        HiveMindGlobals:PrintDebug("Starting recording")
+        self:InitRecordingData()
         HiveMindGlobals:SendChatMessage("Demo recording")
         self.recording = true
     end
 end
 
 function HiveMindRecorder:Write()
-    local json = {}
-    json['player_moves'] = self.playerData
+    HiveMindGlobals:PrintDebug("Populating JSON table")
 
+    local json = {}
+    json['player_moves']    = self.playerData
+    json['header']          = self.headerData
+
+    HiveMindGlobals:PrintDebug("Attempting to save and send")
     SaveAndSendRoundData(json)
+
     HiveMindGlobals:SendChatMessage("Demo uploaded successfully")
 end
 
 -- End HiveMindRecorder class
 
 local function CreateHiveMindRecorder()
+    HiveMindGlobals:PrintDebug("Creating HiveMindRecorder")
     local recorder = HiveMindRecorder()
     recorder:Initialise()
 
