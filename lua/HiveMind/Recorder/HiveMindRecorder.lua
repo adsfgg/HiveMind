@@ -5,6 +5,13 @@ Script.Load("lua/HiveMind/Recorder/SaveSend.lua")
 class 'HiveMindRecorder'
 
 -- Player Data
+-- playerData{
+--     playerId {
+--          update_num {
+--              data;
+--          }
+--      }
+-- }
 HiveMindRecorder.playerData = nil
 HiveMindRecorder.playerDataIdx = nil
 HiveMindRecorder.fullPlayerData = nil
@@ -31,9 +38,10 @@ function HiveMindRecorder:ProcessMove(player, input)
 
     local playerId = HiveMindGlobals:CreatePlayerId(player)
 
-    local playerUpdate = {}
-    local origin = player:GetOrigin()
-    local velocity = player:GetVelocity()
+    local playerUpdate      = {}
+    local origin            = player:GetOrigin()
+    local velocity          = player:GetVelocity()
+    local name              = player:GetName()
 
     playerUpdate.commands   = input.commands
     playerUpdate.origin_x   = origin.x
@@ -44,6 +52,7 @@ function HiveMindRecorder:ProcessMove(player, input)
     playerUpdate.velocity_x = velocity.x
     playerUpdate.velocity_y = velocity.y
     playerUpdate.velocity_z = velocity.z
+    playerUpdate.name       = name
 
     self:UpdatePlayerData(playerId, playerUpdate)
 end

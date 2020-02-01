@@ -4,6 +4,9 @@ if not Server then return end
 Script.Load("lua/HiveMind/LibDeflate.lua")
 Script.Load("lua/HiveMind/base64.lua")
 
+-- Includes
+Script.Load("lua/HiveMind/Playback/PlaybackBot.lua")
+
 class 'HiveMindPlayback'
 
 HiveMindPlayback.trackerManager = nil
@@ -28,7 +31,7 @@ function HiveMindPlayback:Initialise(demo_id)
 
     self.data = self:LoadData(demo_id)
     self.playing = false
-    self.currentUpdate = 1
+    self.currentUpdate = 0
     self.entityIdToPlayerId = {}
     self.playerIdToEntityId = {}
     self.totalUpdates = self.data['header']['totalUpdates']
@@ -76,14 +79,15 @@ function HiveMindPlayback:OnUpdateDemo()
     
     for playerId, data in pairs(playerData) do
         if not self.playerIdToEntityId[playerId] then
-            HiveMindGlobals:PrintDebug("Adding new virtual client for playerId: " .. playerId)
-            local player = Server.AddVirtualClient():GetControllingPlayer()
+            HiveMindGlobals:PrintDebug("Adding new PlaybackBot for playerId: " .. playerId)
 
             -- hack for now 
-            HiveMindGlobals:PrintDebug("HACK - Forcing new player to marines")
-            teamJoinSuccess, player = GetGamerules():JoinTeam(player, 1)
+            HiveMindGlobals:PrintWarn("HACK: Forcing new player to marines")
 
-            self:MapEntityIdToPlayerId(player:GetId(), playerId)
+            local playerBot = PlaybackBot()
+            playerBot:Initialize(playerId, kTeam1Index, true)
+
+            self:MapEntityIdToPlayerId(playerBot:GetPlayer():GetId(), playerId)
         end
     end
 end
@@ -94,71 +98,92 @@ function HiveMindPlayback:MapEntityIdToPlayerId(entityId, playerId)
 
     self.entityIdToPlayerId[entityId] = playerId
     self.playerIdToEntityId[playerId] = entityId
+    HiveMindGlobals:PrintDebug("Mapped: " .. entityId .. " -> " .. playerId)
 end
 
 function HiveMindPlayback:UnmapEntityId(entityId)
     assert(self.entityIdToPlayerId[entityId])
 
     self.entityIdToPlayerId[entityId] = nil
+    HiveMindGlobals:PrintDebug("Unmapped entityId: " .. entityId)
 end
 
 function HiveMindPlayback:UnmapPlayerId(playerId)
     assert(self.playerIdToEntityId[playerId])
 
     self.playerIdToEntityId[playerId] = nil
+    HiveMindGlobals:PrintDebug("Unmapped playerId: " .. playerId)
 end
 
 function HiveMindPlayback:GetCurrentPlayerMoves()
     -- TODO: Don't know why currentUpdate needs to be a string...
-    return self.data['player_moves'][''..self.currentUpdate]
+    local update = self.data['player_moves'][''..self.currentUpdate]
+    while not update do
+        self.currentUpdate = self.currentUpdate + 1
+
+        if self.currentUpdate > self.totalUpdates then
+            return {}
+        end
+
+        update = self.data['player_moves'][''..self.currentUpdate]
+    end
+
+    return update
 end
 
-function HiveMindPlayback:UpdatePlayerData(data, input, player)
+function HiveMindPlayback:GetNextMove(playbackBot)
+    if not self.playing then return nil end
+
+    local player        = playbackBot:GetPlayer()
+    local playerId      = playbackBot:GetPlayerId()
+    local currentMoves  = self:GetCurrentPlayerMoves()
+
+    return self:GetPlayerMove(player, currentMoves[playerId])
+end
+
+function HiveMindPlayback:GetPlayerMove(player, data)
+    if not data then return nil end
+
     local playerOrigin      = player:GetOrigin()
     local playerVelocity    = player:GetVelocity()
+    local playerViewAngles  = player:GetViewAngles()
+    local currentName       = player:GetName() or "Epic Gamer"
 
-    local commands          = data['commands']
-    local yaw               = data['yaw']
-    local pitch             = data['pitch']
+    local commands          = data['commands']  or 0
+    local yaw               = data['yaw']       or playerViewAngles.yaw
+    local pitch             = data['pitch']     or playerViewAngles.pitch
+    local name              = data['name']      or currentName 
     
     -- re-create origin
-    local origin_x          = data['origin_x'] or playerOrigin.x
-    local origin_y          = data['origin_y'] or playerOrigin.y
-    local origin_z          = data['origin_z'] or playerOrigin.z
+    local origin_x          = data['origin_x']  or playerOrigin.x
+    local origin_y          = data['origin_y']  or playerOrigin.y
+    local origin_z          = data['origin_z']  or playerOrigin.z
     local origin            = Vector(origin_x, origin_y, origin_z)
 
-    -- re-create vector
-    local vel_x             = data['vector_x'] or playerVelocity.x
-    local vel_y             = data['vector_y'] or playerVelocity.y
-    local vel_z             = data['vector_z'] or playerVelocity.z
+    -- re-create velocity
+    local vel_x             = data['velocity_x']  or playerVelocity.x
+    local vel_y             = data['velocity_y']  or playerVelocity.y
+    local vel_z             = data['velocity_z']  or playerVelocity.z
     local velocity          = Vector(vel_x, vel_y, vel_z)
 
-    if commands then
-        HiveMindGlobals:PrintDebug("Updating commands")
-        input.commands = commands
-    end
+    -- Create view angles
+    local viewAngles        = Angles()
+    viewAngles.yaw          = yaw
+    viewAngles.pitch        = pitch
 
-    if yaw then
-        HiveMindGlobals:PrintDebug("Updating yaw")
-        input.yaw = yaw
-    end
-    
-    if pitch then
-        HiveMindGlobals:PrintDebug("Updating pitch")
-        input.pitch = pitch
-    end
+    -- Setup our bot's next move
+    local move = {}
+    move.commands   = commands
+    move.yaw        = yaw
+    move.pitch      = pitch
+    move.origin     = origin
+    move.velocity   = velocity
+    move.viewAngles = viewAngles
+    move.name       = name
 
-    if origin then
-        HiveMindGlobals:PrintDebug("Updating origin")
-        player:SetOrigin(origin)
-    end
+    HiveMindGlobals:PrintDebug(self.currentUpdate)
 
-    if velocity then
-        HiveMindGlobals:PrintDebug("Updating velocity")
-        player:SetVelocity(velocity)
-    end
-
-    return player
+    return move
 end
 
 function HiveMindPlayback:OnUpdateServer(server)
