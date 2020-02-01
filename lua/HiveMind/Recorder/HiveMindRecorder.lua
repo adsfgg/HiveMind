@@ -29,14 +29,7 @@ end
 function HiveMindRecorder:ProcessMove(player, input)
     if not self.recording then return end
 
-    local playerId = "S" .. player:GetSteamId()
-    if playerId == 0 then
-        if not player:GetIsVirtual() then
-            HiveMindGlobals:PrintWarn("Failed to get steamid for non virtual player, falling back to entity-id")
-        end
-
-        playerId = "E" .. player:GetId()
-    end
+    local playerId = HiveMindGlobals:CreatePlayerId(player)
 
     local playerUpdate = {}
     local origin = player:GetOrigin()
@@ -142,23 +135,6 @@ function HiveMindRecorder:Write()
 end
 
 -- End HiveMindRecorder class
-
-local function CreateHiveMindRecorder()
-    HiveMindGlobals:PrintDebug("Creating HiveMindRecorder")
-    local recorder = HiveMindRecorder()
-    recorder:Initialise()
-
-    return recorder
-end
-
-local hm_recorder
-function GetHiveMindRecorder()
-    if not hm_recorder then
-        hm_recorder = CreateHiveMindRecorder()
-    end
-
-    return hm_recorder
-end
 
 local old_Player_OnProcessMove = Player.OnProcessMove
 function Player:OnProcessMove(input)

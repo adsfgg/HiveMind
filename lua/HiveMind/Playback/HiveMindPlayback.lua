@@ -19,16 +19,18 @@ HiveMindPlayback.timeToStart = 0
 HiveMindPlayback.currentUpdate = 1
 HiveMindPlayback.totalUpdates = 0
 
-HiveMindPlayback.knownPlayerIds = {}
+HiveMindPlayback.entityIdToPlayerId = {}
+HiveMindPlayback.playerIdToEntityId = {}
 
-function HiveMindPlayback:Initialize(demo_id)
+function HiveMindPlayback:Initialise(demo_id)
     HiveMindGlobals:PrintDebug("Initialise HiveMindPlayback")
     assert(demo_id ~= nil, "No demo id given")
 
     self.data = self:LoadData(demo_id)
     self.playing = false
     self.currentUpdate = 1
-    self.knownPlayerIds = {}
+    self.entityIdToPlayerId = {}
+    self.playerIdToEntityId = {}
     self.totalUpdates = self.data['header']['totalUpdates']
     HiveMindGlobals:PrintDebug("About to start demo. Total updates: " .. self.totalUpdates)
 
@@ -45,7 +47,9 @@ function HiveMindPlayback:OnClientConnect(client)
 
     -- Force the connecting local player to spectate
     if client:GetIsLocalClient() then
+        HiveMindGlobals:PrintDebug("Local player connected, forcing to spectate")
         GetGamerules():JoinTeam(player, kSpectatorIndex)
+        HiveMindGlobals:PrintDebug("Starting demo")
         HiveMindGlobals:SendChatMessage("Playing demo")
         self.playing = true
     end
@@ -64,46 +68,49 @@ function HiveMindPlayback:LoadData(demo_id)
 end
 
 function HiveMindPlayback:OnUpdateDemo()
-    local playerData = self.data['player_moves'][''..self.currentUpdate]
-    
-    for playerId, data in pairs(playerData) do
-        local player
-
-        if not self.knownPlayerIds[playerId] then
-            HiveMindGlobals:PrintDebug("Adding new virtual client for playerId: " .. playerId)
-            player = Server.AddVirtualClient()
-
-            -- hack for now 
-            HiveMindGlobals:PrintDebug("Forcing new player to marines")
-            teamJoinSuccess, player = GetGamerules():JoinTeam(player, 1)
-
-            self.knownPlayerIds[playerId] = true
-        end
-    end
-end
-
-function HiveMindPlayback:ProcessPlayerMove(player, input)
-    if not self.playback or player:IsLocalPlayer() then
-        return
-    end
-
-    local playerId, playerData = HiveMindGlobals:GetPlayerData(player, self.data['player_moves'][self.currentUpdate])
+    local playerData = self:GetCurrentPlayerMoves()
 
     if not playerData then
         return
     end
+    
+    for playerId, data in pairs(playerData) do
+        if not self.playerIdToEntityId[playerId] then
+            HiveMindGlobals:PrintDebug("Adding new virtual client for playerId: " .. playerId)
+            local player = Server.AddVirtualClient():GetControllingPlayer()
 
-    newPlayer = self:UpdatePlayerData(data, input, player)
+            -- hack for now 
+            HiveMindGlobals:PrintDebug("HACK - Forcing new player to marines")
+            teamJoinSuccess, player = GetGamerules():JoinTeam(player, 1)
 
-    -- if the player id is an entity id and the ids have changed 
-    if HiveMindGlobals:IsIdEntity(playerId) and not HiveMindGlobals:PlayerIdMatches(player, playerId) then
-        -- unset the old id
-        self.knownPlayerIds[playerId] = nil
-
-        -- create a new one and update knownPlayerIds table
-        playerId = "E" .. player:GetId()
-        self.knownPlayerIds[playerId] = true
+            self:MapEntityIdToPlayerId(player:GetId(), playerId)
+        end
     end
+end
+
+function HiveMindPlayback:MapEntityIdToPlayerId(entityId, playerId)
+    assert(not self.entityIdToPlayerId[entityId])
+    assert(not self.playerIdToEntityId[playerId])
+
+    self.entityIdToPlayerId[entityId] = playerId
+    self.playerIdToEntityId[playerId] = entityId
+end
+
+function HiveMindPlayback:UnmapEntityId(entityId)
+    assert(self.entityIdToPlayerId[entityId])
+
+    self.entityIdToPlayerId[entityId] = nil
+end
+
+function HiveMindPlayback:UnmapPlayerId(playerId)
+    assert(self.playerIdToEntityId[playerId])
+
+    self.playerIdToEntityId[playerId] = nil
+end
+
+function HiveMindPlayback:GetCurrentPlayerMoves()
+    -- TODO: Don't know why currentUpdate needs to be a string...
+    return self.data['player_moves'][''..self.currentUpdate]
 end
 
 function HiveMindPlayback:UpdatePlayerData(data, input, player)
@@ -127,22 +134,27 @@ function HiveMindPlayback:UpdatePlayerData(data, input, player)
     local velocity          = Vector(vel_x, vel_y, vel_z)
 
     if commands then
+        HiveMindGlobals:PrintDebug("Updating commands")
         input.commands = commands
     end
 
     if yaw then
+        HiveMindGlobals:PrintDebug("Updating yaw")
         input.yaw = yaw
     end
     
     if pitch then
+        HiveMindGlobals:PrintDebug("Updating pitch")
         input.pitch = pitch
     end
 
     if origin then
+        HiveMindGlobals:PrintDebug("Updating origin")
         player:SetOrigin(origin)
     end
 
     if velocity then
+        HiveMindGlobals:PrintDebug("Updating velocity")
         player:SetVelocity(velocity)
     end
 
@@ -160,31 +172,4 @@ function HiveMindPlayback:OnUpdateServer(server)
         self:OnUpdateDemo()
         self.currentUpdate = self.currentUpdate + 1
     end
-end
-
--- End HiveMindPlayback class
-
-local function CreateHiveMindPlayback()
-    HiveMindGlobals:PrintDebug("Creating HiveMindPlayback")
-    local playback = HiveMindPlayback()
-    playback:Initialise()
-
-    return playback
-end
-
-local hm_playback
-function GetHiveMindPlayback()
-    if not hm_playback then
-        hm_playback = CreateHiveMindPlayback()
-    end
-
-    return hm_playback
-end
-
-local old_Player_OnProcessMove = Player.OnProcessMove
-function Player:OnProcessMove(input)
-    old_Player_OnProcessMove(self, input)
-
-    local playback = GetHiveMindPlayback()
-    playback:ProcessPlayerMove(self, input)
 end

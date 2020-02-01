@@ -32,6 +32,11 @@ function HiveMindGlobals:Print(msg)
     Shared.Message(self.modName .. " - (" .. self:GetType() .. "): " .. msg)
 end
 
+function HiveMindGlobals:PrintWarn(msg)
+    msg = "WARNING - " .. msg
+    self:Print(msg)
+end
+
 function HiveMindGlobals:PrintDebug(msg)
     if DEBUG then
         msg = "DEBUG - " .. msg
@@ -69,10 +74,28 @@ function HiveMindGlobals:PlayerIdMatches(player, playerId)
     return false
 end
 
+function HiveMindGlobals:CreatePlayerId(player)
+    local playerId = player:GetSteamId()
+
+    if playerId == 0 then
+        if not player:GetIsVirtual() then
+            HiveMindGlobals:PrintWarn("Failed to get steamid for non virtual player, falling back to entity-id")
+        end
+
+        playerId = "E" .. player:GetId()
+    else
+        playerId = "S" .. playerId
+    end
+
+    return playerId
+end
+
 function HiveMindGlobals:GetPlayerData(player, playerMovesData)
-    for playerId,playerData in pairs(playerMovesData) do
-        if self:PlayerIdMatches(player, playerId) then
-            return playerId, playerData
+    if playerMovesData then
+        for playerId,playerData in pairs(playerMovesData) do
+            if self:PlayerIdMatches(player, playerId) then
+                return playerId, playerData
+            end
         end
     end
 

@@ -21,13 +21,48 @@ local function start_playback(tags)
     
     Script.Load("lua/HiveMind/Playback/HiveMindPlayback.lua")
 
-    local hmp = HiveMindPlayback():Initialize(demo_id)
+    -- Create a new HiveMindPlayback instance
+    GetHiveMindPlayback(demo_id)
+end
+
+local function CreateHiveMindPlayback(demo_id)
+    HiveMindGlobals:PrintDebug("Creating HiveMindPlayback")
+    local playback = HiveMindPlayback()
+    playback:Initialise(demo_id)
+
+    return playback
+end
+
+local hm_playback
+function GetHiveMindPlayback(demo_id)
+    if not hm_playback then
+        hm_playback = CreateHiveMindPlayback(demo_id)
+    end
+
+    return hm_playback
 end
 
 local function start_record()
     HiveMindGlobals:PrintDebug("Initialising demo recorder")
 
     Script.Load("lua/HiveMind/Recorder/HiveMindRecorder.lua")
+end
+
+local function CreateHiveMindRecorder()
+    HiveMindGlobals:PrintDebug("Creating HiveMindRecorder")
+    local recorder = HiveMindRecorder()
+    recorder:Initialise()
+
+    return recorder
+end
+
+local hm_recorder
+function GetHiveMindRecorder()
+    if not hm_recorder then
+        hm_recorder = CreateHiveMindRecorder()
+    end
+
+    return hm_recorder
 end
 
 local function main()
