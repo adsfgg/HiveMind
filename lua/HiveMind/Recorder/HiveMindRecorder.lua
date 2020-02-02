@@ -93,7 +93,7 @@ end
 function HiveMindRecorder:InitRecordingData()
     HiveMindGlobals:PrintDebug("Initialising data for recording")
     self.playerData     = {}
-    self.playerDataIdx  = 0
+    self.playerDataIdx  = 1
     self.fullPlayerData = {}
     self.headerData     = {}
     self.recording      = false

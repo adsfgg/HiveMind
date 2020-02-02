@@ -19,11 +19,12 @@ HiveMindPlayback.playing = false
 HiveMindPlayback.playbackStarted = false
 HiveMindPlayback.timeToStart = 0
 
-HiveMindPlayback.currentUpdate = 1
+HiveMindPlayback.currentUpdate = 0
 HiveMindPlayback.totalUpdates = 0
 
 HiveMindPlayback.entityIdToPlayerId = {}
 HiveMindPlayback.playerIdToEntityId = {}
+HiveMindPlayback.prevCommands       = {}
 
 function HiveMindPlayback:Initialise(demo_id)
     HiveMindGlobals:PrintDebug("Initialise HiveMindPlayback")
@@ -31,9 +32,10 @@ function HiveMindPlayback:Initialise(demo_id)
 
     self.data = self:LoadData(demo_id)
     self.playing = false
-    self.currentUpdate = 0
+    self.currentUpdate = 1
     self.entityIdToPlayerId = {}
     self.playerIdToEntityId = {}
+    self.prevCommands       = {}
     self.totalUpdates = self.data['header']['totalUpdates']
     HiveMindGlobals:PrintDebug("About to start demo. Total updates: " .. self.totalUpdates)
 
@@ -76,6 +78,8 @@ function HiveMindPlayback:OnUpdateDemo()
     if not playerData then
         return
     end
+
+    HiveMindGlobals:PrintDebug("Updating demo: " .. self.currentUpdate)
     
     for playerId, data in pairs(playerData) do
         if not self.playerIdToEntityId[playerId] then
@@ -116,16 +120,16 @@ function HiveMindPlayback:UnmapPlayerId(playerId)
 end
 
 function HiveMindPlayback:GetCurrentPlayerMoves()
-    -- TODO: Don't know why currentUpdate needs to be a string...
-    local update = self.data['player_moves'][''..self.currentUpdate]
+    local update = self.data['player_moves'][self.currentUpdate]
     while not update do
+        HiveMindGlobals:PrintWarn("Failed to get PlayerMoves for update: " .. self.currentUpdate)
         self.currentUpdate = self.currentUpdate + 1
 
         if self.currentUpdate > self.totalUpdates then
             return {}
         end
 
-        update = self.data['player_moves'][''..self.currentUpdate]
+        update = self.data['player_moves'][self.currentUpdate]
     end
 
     return update
@@ -134,22 +138,34 @@ end
 function HiveMindPlayback:GetNextMove(playbackBot)
     if not self.playing then return nil end
 
+    if self.currentUpdate > self.totalUpdates then
+        HiveMindGlobals:SendChatMessage("Demo complete")
+        self.playing = false
+        return nil
+    end
+
+    self:OnUpdateDemo()
+
     local player        = playbackBot:GetPlayer()
     local playerId      = playbackBot:GetPlayerId()
     local currentMoves  = self:GetCurrentPlayerMoves()
 
-    return self:GetPlayerMove(player, currentMoves[playerId])
+    local move          = self:GetPlayerMove(player, playerId, currentMoves[playerId])
+    
+    self.currentUpdate = self.currentUpdate + 1
+    return move
 end
 
-function HiveMindPlayback:GetPlayerMove(player, data)
+function HiveMindPlayback:GetPlayerMove(player, playerId, data)
     if not data then return nil end
 
     local playerOrigin      = player:GetOrigin()
     local playerVelocity    = player:GetVelocity()
     local playerViewAngles  = player:GetViewAngles()
     local currentName       = player:GetName() or "Epic Gamer"
+    local prevCommands      = self.prevCommands[playerId] or 0
 
-    local commands          = data['commands']  or 0
+    local commands          = data['commands']  or prevCommands
     local yaw               = data['yaw']       or playerViewAngles.yaw
     local pitch             = data['pitch']     or playerViewAngles.pitch
     local name              = data['name']      or currentName 
@@ -171,6 +187,9 @@ function HiveMindPlayback:GetPlayerMove(player, data)
     viewAngles.yaw          = yaw
     viewAngles.pitch        = pitch
 
+    -- Update prev commands
+    self.prevCommands[playerId] = commands
+
     -- Setup our bot's next move
     local move = {}
     move.commands   = commands
@@ -181,20 +200,12 @@ function HiveMindPlayback:GetPlayerMove(player, data)
     move.viewAngles = viewAngles
     move.name       = name
 
-    HiveMindGlobals:PrintDebug(self.currentUpdate)
-
     return move
 end
 
 function HiveMindPlayback:OnUpdateServer(server)
-    if self.playing then
-        if self.currentUpdate > self.totalUpdates then
-            HiveMindGlobals:SendChatMessage("Demo complete")
-            self.playing = false
-            return
-        end
-
+    if self.playing and self.currentUpdate == 1 then
+        HiveMindGlobals:PrintDebug("OnServer update")
         self:OnUpdateDemo()
-        self.currentUpdate = self.currentUpdate + 1
     end
 end
